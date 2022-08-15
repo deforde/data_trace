@@ -1,1 +1,3 @@
 .venv/
+build/
+data_trace_out.txt
