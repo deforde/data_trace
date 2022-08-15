@@ -1,2 +1,2 @@
 # data\_trace
-Automatically trace, log and plot changes in global variables in c applications.
+Automatically trace, log and plot changes in variables in c applications.
