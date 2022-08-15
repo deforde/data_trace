@@ -32,14 +32,14 @@ $(EXECUTABLE): $(OBJS)
 	$(CC) $(OBJS) -o $@ $(LDFLAGS)
 
 $(BUILD_DIR)/%.c.o: %.c
-	mkdir -p $(dir $@)
+	@mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 .PHONY: clean compdb valgrind run
 
 clean:
-	@rm -rf $(BUILD_DIR) && \
-	rm -rf data_trace_out.txt
+	@rm -rf $(BUILD_DIR)
+
 
 compdb: clean
 	@bear -- $(MAKE) san && \
