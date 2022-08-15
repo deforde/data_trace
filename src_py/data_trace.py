@@ -2,24 +2,26 @@
 
 from os import path, remove
 import subprocess as sp
+import argparse
+import json
 
 from matplotlib import pyplot as plt
+
 
 PATH = path.dirname(path.abspath(__file__))
 GDB_CMDS_FILEPATH = path.join(PATH, "gdb_cmds")
 DATA_TRACE_OUT_FILEPATH = path.join(PATH, "data_trace_out.txt")
-EXEC_PATH = path.join(PATH, "..", "build", "data_trace")
 DTRACE_LINE_PREFIX = "DTRACE: "
-WATCH_VARS = [
-    {
-        "id": "x",
-        "fmt": "%f",
-    },
-    {
-        "id": "y",
-        "fmt": "%f",
-    },
-]
+
+parser = argparse.ArgumentParser()
+parser.add_argument("config", type=str, help="config file")
+args = parser.parse_args(["/home/danielforde/dev/deforde/data_trace/src_py/config.json"])
+
+config = {}
+with open(args.config, mode="r", encoding="utf-8") as config_file:
+    config = json.load(config_file)
+app_path = config["app"]
+watch_vars = config["watch"]
 
 with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
     gdb_cmds_file.write(
@@ -28,7 +30,7 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
         f"set logging file {DATA_TRACE_OUT_FILEPATH}\n"
         "set logging enabled on\n"
     )
-    for watch_var_dict in WATCH_VARS:
+    for watch_var_dict in watch_vars:
         ident = watch_var_dict["id"]
         fmt_str = watch_var_dict["fmt"]
         gdb_cmds_file.write(
@@ -49,7 +51,7 @@ sp.run(
         "gdb",
         "-x",
         GDB_CMDS_FILEPATH,
-        EXEC_PATH,
+        app_path,
     ],
     check=True,
 )

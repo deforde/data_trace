@@ -1,0 +1,13 @@
+{
+  "app": "/home/danielforde/dev/deforde/data_trace/build/data_trace",
+  "watch": [
+    {
+      "id": "x",
+      "fmt": "%f"
+    },
+    {
+      "id": "y",
+      "fmt": "%f"
+    }
+  ]
+}
