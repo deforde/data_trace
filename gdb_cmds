@@ -1,5 +1,6 @@
 set logging overwrite on
 set logging redirect on
+set logging file data_trace_out.txt
 set logging enabled on
 watch y
 command
