@@ -14,6 +14,7 @@ CFLAGS := -Wall -Wextra -Wpedantic -Werror $(INC_FLAGS) -MMD -MP
 LDFLAGS := -lm
 
 EXECUTABLE := $(BUILD_DIR)/$(TARGET_EXEC)
+GDB_CMDS_FILE := ./gdb_cmds
 
 all: CFLAGS += -O3
 all: executable
@@ -37,7 +38,8 @@ $(BUILD_DIR)/%.c.o: %.c
 .PHONY: clean compdb valgrind run
 
 clean:
-	@rm -rf $(BUILD_DIR)
+	@rm -rf $(BUILD_DIR) && \
+	rm -rf data_trace_out.txt
 
 compdb: clean
 	@bear -- $(MAKE) san && \
@@ -46,7 +48,7 @@ compdb: clean
 valgrind: debug
 	@valgrind ./$(EXECUTABLE)
 
-test: san
-	@./$(EXECUTABLE)
+test: debug
+	@gdb -x $(GDB_CMDS_FILE) ./$(EXECUTABLE)
 
 -include $(DEPS)
