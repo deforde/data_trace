@@ -3,11 +3,14 @@
   "watch": [
     {
       "id": "x",
-      "fmt": "%f"
+      "fmt": "%f",
+      "kind": "global"
     },
     {
       "id": "y",
-      "fmt": "%f"
+      "fmt": "%f",
+      "kind": "local",
+      "loc": "main.c:15"
     }
   ]
 }

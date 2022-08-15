@@ -33,9 +33,18 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
     for watch_var_dict in watch_vars:
         ident = watch_var_dict["id"]
         fmt_str = watch_var_dict["fmt"]
+        kind = watch_var_dict["kind"]
+        if kind == "global":
+            gdb_cmds_file.write(
+                f"watch {ident}\n"
+            )
+        elif kind == "local":
+            loc = watch_var_dict["loc"]
+            gdb_cmds_file.write(
+                f"break {loc}\n"
+            )
         gdb_cmds_file.write(
-            f"watch {ident}\n"
-            "command\n"
+            f"commands\n"
             "silent\n"
             f'printf "{DTRACE_LINE_PREFIX}{ident}={fmt_str}\\n",{ident}\n'
             "cont\n"
@@ -76,5 +85,5 @@ for var, vals in data.items():
 fig.legend()
 plt.savefig(path.join(PATH, "dtrace.png"))
 
-remove(DATA_TRACE_OUT_FILEPATH)
-remove(GDB_CMDS_FILEPATH)
+# remove(DATA_TRACE_OUT_FILEPATH)
+# remove(GDB_CMDS_FILEPATH)
