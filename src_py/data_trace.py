@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from os import path, remove
+from os import path
 import subprocess as sp
 import argparse
 import json
@@ -21,7 +21,6 @@ config = {}
 with open(args.config, mode="r", encoding="utf-8") as config_file:
     config = json.load(config_file)
 app_path = config["app"]
-watch_vars = config["watch"]
 app_args = config["args"]
 
 with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
@@ -32,26 +31,36 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
         f"set logging file {DATA_TRACE_OUT_FILEPATH}\n"
         "set logging enabled on\n"
     )
-    for watch_var_dict in watch_vars:
-        ident = watch_var_dict["id"]
-        fmt_str = watch_var_dict["fmt"]
-        kind = watch_var_dict["kind"]
-        if kind == "global":
+    if "globals" in config:
+        for global_dict in config["globals"]:
+            ident = global_dict["id"]
+            fmt_str = global_dict["fmt"]
             gdb_cmds_file.write(
                 f"watch {ident}\n"
+                "commands\n"
+                "silent\n"
+                f'printf "{DTRACE_LINE_PREFIX}{ident}={fmt_str}\\n",{ident}\n'
+                "c\n"
+                "end\n"
             )
-        elif kind == "local":
-            loc = watch_var_dict["loc"]
+    if "locals" in config:
+        for local_dict in config["locals"]:
+            loc = local_dict["loc"]
+            idents = local_dict["ids"]
+            fmt_strs = local_dict["fmts"]
             gdb_cmds_file.write(
                 f"break {loc}\n"
+                "commands\n"
+                "silent\n"
             )
-        gdb_cmds_file.write(
-            f"commands\n"
-            "silent\n"
-            f'printf "{DTRACE_LINE_PREFIX}{ident}={fmt_str}\\n",{ident}\n'
-            "c\n"
-            "end\n"
-        )
+            for ident, fmt_str in zip(idents, fmt_strs):
+                gdb_cmds_file.write(
+                    f'printf "{DTRACE_LINE_PREFIX}{ident}={fmt_str}\\n",{ident}\n'
+                )
+            gdb_cmds_file.write(
+                "c\n"
+                "end\n"
+            )
     gdb_cmds_file.write(
         "r\n"
         "q\n"
@@ -87,6 +96,3 @@ for var, vals in data.items():
     plt.plot(vals, label=var)
 fig.legend()
 plt.savefig(path.join(PATH, "dtrace.png"))
-
-# remove(DATA_TRACE_OUT_FILEPATH)
-# remove(GDB_CMDS_FILEPATH)

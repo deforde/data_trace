@@ -1,16 +1,16 @@
 {
   "app": "/home/danielforde/dev/deforde/data_trace/build/data_trace",
   "args": [],
-  "watch": [
+  "globals": [
     {
       "id": "x",
-      "fmt": "%f",
-      "kind": "global"
-    },
+      "fmt": "%f"
+    }
+  ],
+  "locals": [
     {
-      "id": "y",
-      "fmt": "%f",
-      "kind": "local",
+      "ids": ["y"],
+      "fmts": ["%f"],
       "loc": "main.c:15"
     }
   ]
