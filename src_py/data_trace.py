@@ -22,9 +22,11 @@ with open(args.config, mode="r", encoding="utf-8") as config_file:
     config = json.load(config_file)
 app_path = config["app"]
 watch_vars = config["watch"]
+app_args = config["args"]
 
 with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
     gdb_cmds_file.write(
+        "set breakpoint pending on\n"
         "set logging overwrite on\n"
         "set logging redirect on\n"
         f"set logging file {DATA_TRACE_OUT_FILEPATH}\n"
@@ -47,12 +49,12 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
             f"commands\n"
             "silent\n"
             f'printf "{DTRACE_LINE_PREFIX}{ident}={fmt_str}\\n",{ident}\n'
-            "cont\n"
+            "c\n"
             "end\n"
         )
     gdb_cmds_file.write(
-        "run\n"
-        "quit\n"
+        "r\n"
+        "q\n"
     )
 
 sp.run(
@@ -60,8 +62,9 @@ sp.run(
         "gdb",
         "-x",
         GDB_CMDS_FILEPATH,
+        "--args",
         app_path,
-    ],
+    ] + app_args,
     check=True,
 )
 
