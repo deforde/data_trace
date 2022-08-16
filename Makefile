@@ -10,7 +10,7 @@ DEPS := $(OBJS:.o=.d)
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
 
-CFLAGS := -Wall -Wextra -Wpedantic -Werror $(INC_FLAGS) -MMD -MP
+CFLAGS := -Wall -Wextra -Wpedantic -Werror -Wno-unused-but-set-variable $(INC_FLAGS) -MMD -MP
 LDFLAGS := -lm
 
 EXECUTABLE := $(BUILD_DIR)/$(TARGET_EXEC)

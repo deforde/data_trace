@@ -4,14 +4,21 @@
   "globals": [
     {
       "id": "x",
-      "fmt": "%f"
+      "type": "var"
     }
   ],
   "locals": [
     {
-      "ids": ["y"],
-      "fmts": ["%f"],
-      "loc": "main.c:15"
+      "ids": ["y", "p"],
+      "types": ["var", "ptr"],
+      "loc": "main.c:33"
+    }
+  ],
+  "statics": [
+    {
+      "id": "w",
+      "type": "var",
+      "file": "main.c"
     }
   ]
 }

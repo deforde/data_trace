@@ -23,9 +23,23 @@ with open(args.config, mode="r", encoding="utf-8") as config_file:
 app_path = config["app"]
 app_args = config["args"]
 
+
+def fmtTypePrintCmd(ident, ty):
+    if ty == "var":
+        return f"p {ident}\n"
+    elif ty == "arr":
+        return f"p -array -- {ident}\n"
+    elif ty == "ptr":
+        return f"p *{ident}\n"
+    raise ValueError(f"unrecognised type string: '{ty}'")
+
+
 with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
     gdb_cmds_file.write(
         "set breakpoint pending on\n"
+        "set print elements unlimited\n"
+        "set print repeats unlimited\n"
+        "set pagination off\n"
         "set logging overwrite on\n"
         "set logging redirect on\n"
         f"set logging file {DATA_TRACE_OUT_FILEPATH}\n"
@@ -34,12 +48,15 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
     if "globals" in config:
         for global_dict in config["globals"]:
             ident = global_dict["id"]
-            fmt_str = global_dict["fmt"]
+            ty = global_dict["type"]
             gdb_cmds_file.write(
                 f"watch {ident}\n"
                 "commands\n"
                 "silent\n"
-                f'printf "{DTRACE_LINE_PREFIX}{ident}={fmt_str}\\n",{ident}\n'
+                f'printf "{DTRACE_LINE_PREFIX}{ident}: "\n'
+            )
+            gdb_cmds_file.write(fmtTypePrintCmd(ident, ty))
+            gdb_cmds_file.write(
                 "c\n"
                 "end\n"
             )
@@ -47,16 +64,33 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
         for local_dict in config["locals"]:
             loc = local_dict["loc"]
             idents = local_dict["ids"]
-            fmt_strs = local_dict["fmts"]
+            tys = local_dict["types"]
             gdb_cmds_file.write(
-                f"break {loc}\n"
+                f"b {loc}\n"
                 "commands\n"
                 "silent\n"
             )
-            for ident, fmt_str in zip(idents, fmt_strs):
+            for ident, ty in zip(idents, tys):
                 gdb_cmds_file.write(
-                    f'printf "{DTRACE_LINE_PREFIX}{ident}={fmt_str}\\n",{ident}\n'
+                    f'printf "{DTRACE_LINE_PREFIX}{ident}: "\n'
                 )
+                gdb_cmds_file.write(fmtTypePrintCmd(ident, ty))
+            gdb_cmds_file.write(
+                "c\n"
+                "end\n"
+            )
+    if "statics" in config:
+        for static_dict in config["statics"]:
+            ident = static_dict["id"]
+            ty = static_dict["type"]
+            src_file = static_dict["file"]
+            gdb_cmds_file.write(
+                f"watch '{src_file}'::{ident}\n"
+                "commands\n"
+                "silent\n"
+                f'printf "{DTRACE_LINE_PREFIX}{ident}: "\n'
+            )
+            gdb_cmds_file.write(fmtTypePrintCmd(ident, ty))
             gdb_cmds_file.write(
                 "c\n"
                 "end\n"
@@ -83,9 +117,9 @@ with open(DATA_TRACE_OUT_FILEPATH, mode="r", encoding="utf-8") as dtrace_out_fil
         if not line.startswith(DTRACE_LINE_PREFIX):
             continue
         line = line[len(DTRACE_LINE_PREFIX):]
-        splits = line.split("=")
+        splits = line.split(":")
         ident = splits[0]
-        val = float(splits[1].strip())
+        val = float(splits[1].split("=")[1].strip())
         if ident not in data:
             data[ident] = []
         data[ident].append(val)
