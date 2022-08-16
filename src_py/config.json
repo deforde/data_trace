@@ -3,21 +3,22 @@
   "args": [],
   "globals": [
     {
-      "id": "x",
-      "type": "var"
+      "ids": ["x"]
     }
   ],
   "locals": [
     {
       "ids": ["y", "p"],
-      "types": ["var", "ptr"],
       "loc": "main.c:33"
+    },
+    {
+      "ids": ["arr"],
+      "loc": "main.c:37"
     }
   ],
   "statics": [
     {
       "id": "w",
-      "type": "var",
       "file": "main.c"
     }
   ]
