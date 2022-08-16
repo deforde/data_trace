@@ -1,4 +1,5 @@
 import argparse
+import json
 
 DTRACE_LINE_PREFIX = "DTRACE: "
 
@@ -19,8 +20,20 @@ class TraceDataCommand(gdb.Command):
         return gdb.COMPLETE_SYMBOL
 
     def invoke(self, args, from_tty):
-        ident = args
-        val = gdb.parse_and_eval(args)
+        desc = json.loads(args)
+        ident = desc["id"]
+        if "@" in ident:
+            splits = ident.split("@")
+            ident = splits[0]
+            len = splits[1]
+            val = gdb.parse_and_eval(ident)
+            len = gdb.parse_and_eval(len)
+            len = int(len)
+            assert val.type.code == gdb.TYPE_CODE_PTR
+            val = val.cast(gdb.parse_and_eval(f"({val.type.target().name}[{len}]*){ident}").type).dereference()
+            print(f"{DTRACE_LINE_PREFIX}{ident} = {val}")
+            return
+        val = gdb.parse_and_eval(ident)
         val = self.interpret_val(val)
         print(f"{DTRACE_LINE_PREFIX}{ident} = {val}")
 

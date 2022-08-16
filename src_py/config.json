@@ -9,11 +9,15 @@
   "locals": [
     {
       "ids": ["y", "p"],
-      "loc": "main.c:33"
+      "loc": "main.c:39"
     },
     {
       "ids": ["arr"],
-      "loc": "main.c:37"
+      "loc": "main.c:44"
+    },
+    {
+      "ids": ["data2@len"],
+      "loc": "main.c:20"
     }
   ],
   "statics": [

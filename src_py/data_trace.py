@@ -12,7 +12,7 @@ PATH = path.dirname(path.abspath(__file__))
 GDB_CMDS_FILEPATH = path.join(PATH, "gdb_cmds")
 GDB_EXTENSIONS = path.join(PATH, "gdb_extensions.py")
 DATA_TRACE_OUT_FILEPATH = path.join(PATH, "data_trace_out.txt")
-DTRACE_LINE_PREFIX = "DTRACE: "
+DTRACE_LINE_PREFIX = "DTRACE: "  # TODO: This is defined twice
 
 parser = argparse.ArgumentParser()
 parser.add_argument("config", type=str, help="config file")
@@ -44,7 +44,7 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
                     f"watch {ident}\n"
                     "commands\n"
                     "silent\n"
-                    f'trace_data {ident}\n'
+                    f'trace_data {{"id": "{ident}"}}\n'
                     "c\n"
                     "end\n"
                 )
@@ -59,7 +59,7 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
             )
             for ident in idents:
                 gdb_cmds_file.write(
-                    f'trace_data {ident}\n'
+                    f'trace_data {{"id": "{ident}"}}\n'
                 )
             gdb_cmds_file.write(
                 "c\n"
@@ -73,7 +73,7 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
                 f"watch '{src_file}'::{ident}\n"
                 "commands\n"
                 "silent\n"
-                f'trace_data {ident}\n'
+                f'trace_data {{"id": "{ident}"}}\n'
                 "c\n"
                 "end\n"
             )
