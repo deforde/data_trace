@@ -1,5 +1,6 @@
 import argparse
 import json
+import gdb
 
 DTRACE_LINE_PREFIX = "DTRACE: "
 
@@ -10,11 +11,6 @@ class TraceDataCommand(gdb.Command):
         )
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument("desc", type=str, help="print json descriptor")
-
-    def interpret_val(self, val):
-        if val.type.code == gdb.TYPE_CODE_PTR:
-            return self.interpret_val(val.dereference())
-        return val
 
     def complete(self, text, word):
         return gdb.COMPLETE_SYMBOL
@@ -34,7 +30,9 @@ class TraceDataCommand(gdb.Command):
             print(f"{DTRACE_LINE_PREFIX}{ident} = {val}")
             return
         val = gdb.parse_and_eval(ident)
-        val = self.interpret_val(val)
+        while val.type.code == gdb.TYPE_CODE_PTR:
+            val = val.dereference()
         print(f"{DTRACE_LINE_PREFIX}{ident} = {val}")
+
 
 TraceDataCommand()
