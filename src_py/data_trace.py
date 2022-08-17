@@ -9,6 +9,7 @@ import logging
 import concurrent.futures
 import struct
 import pickle
+from time import monotonic_ns
 
 from matplotlib import pyplot as plt
 
@@ -22,6 +23,13 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
+
+
+def _plot(fig, axes, data_dict):
+    axes.cla()
+    for var, vals in data_dict.items():
+        axes.plot(vals, label=var)
+    fig.legend()
 
 
 def _recv_all(sock: socket.socket, size: int) -> bytes:
@@ -86,16 +94,17 @@ def _write_gdb_cmds_file(config: dict, server_port: int):
                 gdb_cmds_file.write("c\n" "end\n")
         if "statics" in config:
             for static_dict in config["statics"]:
-                ident = static_dict["id"]
+                idents = static_dict["ids"]
                 src_file = static_dict["file"]
-                gdb_cmds_file.write(
-                    f"watch '{src_file}'::{ident}\n"
-                    "commands\n"
-                    "silent\n"
-                    f'trace_data {{"id": "{ident}", "server_port": {server_port}}}\n'
-                    "c\n"
-                    "end\n"
-                )
+                for ident in idents:
+                    gdb_cmds_file.write(
+                        f"watch '{src_file}'::{ident}\n"
+                        "commands\n"
+                        "silent\n"
+                        f'trace_data {{"id": "{ident}", "server_port": {server_port}}}\n'
+                        "c\n"
+                        "end\n"
+                    )
         gdb_cmds_file.write("r\n" "q\n")
 
 
@@ -109,12 +118,16 @@ with open(args.config, mode="r", encoding="utf-8") as config_file:
 app_path = config["app"]
 app_args = config["args"]
 
+plt.style.use("ggplot")
+fig, ax = plt.subplots()
+fig.set_size_inches(w=16, h=9)
+
 data = {}
 with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as sock:
     sock.bind(("127.0.0.1", 0))
     server_port = sock.getsockname()[1]
     logger.info("super-process server listening on port: %i", server_port)
-    sock.listen(1)
+    sock.listen(32768)
 
     _write_gdb_cmds_file(config=config, server_port=server_port)
 
@@ -123,6 +136,7 @@ with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as sock:
         _subprocess,
     )
 
+    t_last_plot = 0
     while future.running():
         logger.debug("accepting a connection from the sub-process")
         conn, addr = sock.accept()
@@ -147,6 +161,12 @@ with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as sock:
                     if ident not in data:
                         data[ident] = []
                     data[ident].append(float(val))
+        t_now = monotonic_ns()
+        if t_now - t_last_plot > 1_000_000_000:
+            t_last_plot = t_now
+            ax.cla()
+            _plot(fig, ax, data)
+            plt.pause(0.1)
         logger.debug("disconnected from the sub-process")
 logger.info("super-process server socket closed")
 
@@ -155,12 +175,3 @@ for key, arr in data.items():
     logger.info("pickling data for identifier: '%s'", key)
     with open(path.join(PATH, f"dtrace_{key}.pickle"), mode="wb") as data_file:
         pickle.dump(arr, data_file)
-
-logger.info("writing traced data plot to file: '%s'", PLOT_FILENAME)
-plt.style.use("ggplot")
-fig = plt.figure()
-fig.set_size_inches(w=16, h=9)
-for var, vals in data.items():
-    plt.plot(vals, label=var)
-fig.legend()
-plt.savefig(path.join(PATH, PLOT_FILENAME))

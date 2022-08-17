@@ -22,7 +22,7 @@
   ],
   "statics": [
     {
-      "id": "w",
+      "ids": ["w"],
       "file": "main.c"
     }
   ]
