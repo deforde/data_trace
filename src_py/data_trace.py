@@ -8,6 +8,7 @@ import socket
 import logging
 import concurrent.futures
 import struct
+import pickle
 
 from matplotlib import pyplot as plt
 
@@ -15,6 +16,7 @@ from matplotlib import pyplot as plt
 PATH = path.dirname(path.abspath(__file__))
 GDB_CMDS_FILEPATH = path.join(PATH, "gdb_cmds")
 GDB_EXTENSIONS = path.join(PATH, "gdb_extensions.py")
+PLOT_FILENAME = "dtrace.svg"
 UDP_DATA_PORT = 5555  # TODO: This is defined twice
 SYNC_COUNTER_MAX = 32767  # TODO: This is defined twice
 
@@ -143,10 +145,16 @@ with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
             data[ident].append(float(val))
 logger.info("super-process server socket closed")
 
+for key, arr in data.items():
+    logger.info("pickling data for identifier: '%s'", key)
+    with open(path.join(PATH, f"dtrace_{key}.pickle"), mode="wb") as data_file:
+        pickle.dump(arr, data_file)
+
+logger.info("writing traced data plot to file: '%s'", PLOT_FILENAME)
 plt.style.use("ggplot")
 fig = plt.figure()
 fig.set_size_inches(w=16, h=9)
 for var, vals in data.items():
     plt.plot(vals, label=var)
 fig.legend()
-plt.savefig(path.join(PATH, "dtrace.svg"))
+plt.savefig(path.join(PATH, PLOT_FILENAME))
