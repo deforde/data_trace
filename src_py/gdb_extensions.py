@@ -4,11 +4,10 @@ import gdb
 
 DTRACE_LINE_PREFIX = "DTRACE: "
 
+
 class TraceDataCommand(gdb.Command):
     def __init__(self):
-        super(TraceDataCommand, self).__init__(
-            "trace_data", gdb.COMMAND_USER
-        )
+        super(TraceDataCommand, self).__init__("trace_data", gdb.COMMAND_USER)
         self.parser = argparse.ArgumentParser()
         self.parser.add_argument("desc", type=str, help="print json descriptor")
 
@@ -26,7 +25,9 @@ class TraceDataCommand(gdb.Command):
             len = gdb.parse_and_eval(len)
             len = int(len)
             assert val.type.code == gdb.TYPE_CODE_PTR
-            val = val.cast(gdb.parse_and_eval(f"({val.type.target().name}[{len}]*){ident}").type).dereference()
+            val = val.cast(
+                gdb.parse_and_eval(f"({val.type.target().name}[{len}]*){ident}").type
+            ).dereference()
             print(f"{DTRACE_LINE_PREFIX}{ident} = {val}")
             return
         val = gdb.parse_and_eval(ident)

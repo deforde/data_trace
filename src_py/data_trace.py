@@ -16,7 +16,9 @@ DTRACE_LINE_PREFIX = "DTRACE: "  # TODO: This is defined twice
 
 parser = argparse.ArgumentParser()
 parser.add_argument("config", type=str, help="config file")
-args = parser.parse_args(["/home/danielforde/dev/deforde/data_trace/src_py/config.json"])
+args = parser.parse_args(
+    ["/home/danielforde/dev/deforde/data_trace/src_py/config.json"]
+)
 
 config = {}
 with open(args.config, mode="r", encoding="utf-8") as config_file:
@@ -52,19 +54,10 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
         for local_dict in config["locals"]:
             loc = local_dict["loc"]
             idents = local_dict["ids"]
-            gdb_cmds_file.write(
-                f"b {loc}\n"
-                "commands\n"
-                "silent\n"
-            )
+            gdb_cmds_file.write(f"b {loc}\n" "commands\n" "silent\n")
             for ident in idents:
-                gdb_cmds_file.write(
-                    f'trace_data {{"id": "{ident}"}}\n'
-                )
-            gdb_cmds_file.write(
-                "c\n"
-                "end\n"
-            )
+                gdb_cmds_file.write(f'trace_data {{"id": "{ident}"}}\n')
+            gdb_cmds_file.write("c\n" "end\n")
     if "statics" in config:
         for static_dict in config["statics"]:
             ident = static_dict["id"]
@@ -77,10 +70,7 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
                 "c\n"
                 "end\n"
             )
-    gdb_cmds_file.write(
-        "r\n"
-        "q\n"
-    )
+    gdb_cmds_file.write("r\n" "q\n")
 
 sp.run(
     [
@@ -89,7 +79,8 @@ sp.run(
         GDB_CMDS_FILEPATH,
         "--args",
         app_path,
-    ] + app_args,
+    ]
+    + app_args,
     check=True,
 )
 
