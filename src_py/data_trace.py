@@ -15,7 +15,6 @@ from matplotlib import pyplot as plt
 PATH = path.dirname(path.abspath(__file__))
 GDB_CMDS_FILEPATH = path.join(PATH, "gdb_cmds")
 GDB_EXTENSIONS = path.join(PATH, "gdb_extensions.py")
-DATA_TRACE_OUT_FILEPATH = path.join(PATH, "data_trace_out.txt")
 UDP_DATA_PORT = 5555  # TODO: This is defined twice
 
 logger = logging.getLogger(__name__)
@@ -61,10 +60,6 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
         "set print elements unlimited\n"
         "set print repeats unlimited\n"
         "set pagination off\n"
-        "set logging overwrite on\n"
-        "set logging redirect on\n"
-        f"set logging file {DATA_TRACE_OUT_FILEPATH}\n"
-        "set logging enabled on\n"
     )
     if "globals" in config:
         for global_dict in config["globals"]:
