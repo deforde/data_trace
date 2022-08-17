@@ -124,6 +124,7 @@ with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
             data[ident].append(float(val))
 logger.info("super-process server socket closed")
 
+plt.style.use("ggplot")
 fig = plt.figure()
 fig.set_size_inches(w=16, h=9)
 for var, vals in data.items():
