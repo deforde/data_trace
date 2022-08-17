@@ -120,6 +120,7 @@ with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
     exp_sync_counter = 0
     while future.running():
         sync_counter, payload_len = struct.unpack("=II", _recv_all(sock, 8))
+        # A payload length of zero is used to indicate the end of the data stream
         if payload_len == 0:
             break
         if sync_counter != exp_sync_counter:

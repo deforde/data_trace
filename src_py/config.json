@@ -3,13 +3,13 @@
   "args": [],
   "globals": [
     {
-      "ids": ["x"]
+      "ids": ["x", "s"]
     }
   ],
   "locals": [
     {
       "ids": ["y", "p"],
-      "loc": "main.c:39"
+      "loc": "main.c:38"
     },
     {
       "ids": ["arr"],
@@ -17,7 +17,7 @@
     },
     {
       "ids": ["data2@len"],
-      "loc": "main.c:20"
+      "loc": "main.c:21"
     }
   ],
   "statics": [
