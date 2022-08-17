@@ -16,11 +16,22 @@ PATH = path.dirname(path.abspath(__file__))
 GDB_CMDS_FILEPATH = path.join(PATH, "gdb_cmds")
 GDB_EXTENSIONS = path.join(PATH, "gdb_extensions.py")
 UDP_DATA_PORT = 5555  # TODO: This is defined twice
+SYNC_COUNTER_MAX = 32767  # TODO: This is defined twice
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 logger.addHandler(ch)
+
+
+def _recv_all(sock: socket.socket, size: int) -> bytes:
+    remaining = size
+    data = bytes()
+    while remaining > 0:
+        rx_data = sock.recv(remaining)
+        remaining -= len(rx_data)
+        data += rx_data
+    return data
 
 
 def _subprocess():
@@ -38,7 +49,7 @@ def _subprocess():
     )
     logger.info("gdb complete")
     with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
-        sock.sendto(struct.pack("=I", 0), ("127.0.0.1", UDP_DATA_PORT))
+        sock.sendto(struct.pack("=II", 0, 0), ("127.0.0.1", UDP_DATA_PORT))
 
 
 parser = argparse.ArgumentParser()
@@ -98,7 +109,6 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
     gdb_cmds_file.write("r\n" "q\n")
 
 data = {}
-
 with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
     sock.bind(("127.0.0.1", UDP_DATA_PORT))
 
@@ -107,12 +117,20 @@ with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
         _subprocess,
     )
 
+    exp_sync_counter = 0
     while future.running():
-        (payload_len,) = struct.unpack("=I", sock.recvfrom(4)[0])
-        logger.debug("payload_len received: %i", payload_len)
+        sync_counter, payload_len = struct.unpack("=II", _recv_all(sock, 8))
         if payload_len == 0:
             break
-        payload = bytes.decode(sock.recvfrom(payload_len)[0], encoding="utf-8")
+        if sync_counter != exp_sync_counter:
+            logger.error(
+                "received unexpected sync_counter, expected: %i, got: %i, probable data loss",
+                exp_sync_counter,
+                sync_counter,
+            )
+        exp_sync_counter = (sync_counter + 1) % SYNC_COUNTER_MAX
+        logger.debug("payload_len received: %i", payload_len)
+        payload = bytes.decode(_recv_all(sock, payload_len), encoding="utf-8")
         logger.debug("payload received: %s", payload)
         ident, val = payload.split(":")
         if val[0] == "{":
