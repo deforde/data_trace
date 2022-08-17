@@ -1,8 +1,10 @@
 import argparse
 import json
+import socket
+import struct
 import gdb
 
-DTRACE_LINE_PREFIX = "DTRACE: "
+UDP_DATA_PORT = 5555  # TODO: This is defined twice
 
 
 class TraceDataCommand(gdb.Command):
@@ -16,24 +18,27 @@ class TraceDataCommand(gdb.Command):
 
     def invoke(self, args, from_tty):
         desc = json.loads(args)
+        server_port = int(desc["server_port"])
         ident = desc["id"]
         if "@" in ident:
             splits = ident.split("@")
             ident = splits[0]
-            len = splits[1]
+            arr_len = splits[1]
             val = gdb.parse_and_eval(ident)
-            len = gdb.parse_and_eval(len)
-            len = int(len)
+            arr_len = gdb.parse_and_eval(arr_len)
+            arr_len = int(arr_len)
             assert val.type.code == gdb.TYPE_CODE_PTR
             val = val.cast(
-                gdb.parse_and_eval(f"({val.type.target().name}[{len}]*){ident}").type
+                gdb.parse_and_eval(f"({val.type.target().name}[{arr_len}]*){ident}").type
             ).dereference()
-            print(f"{DTRACE_LINE_PREFIX}{ident} = {val}")
-            return
-        val = gdb.parse_and_eval(ident)
-        while val.type.code == gdb.TYPE_CODE_PTR:
-            val = val.dereference()
-        print(f"{DTRACE_LINE_PREFIX}{ident} = {val}")
+        else:
+            val = gdb.parse_and_eval(ident)
+            while val.type.code == gdb.TYPE_CODE_PTR:
+                val = val.dereference()
+        payload = bytes(f"{ident}:{val}", encoding="utf-8")
+        with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
+            sock.sendto(struct.pack("=I", len(payload)), ("127.0.0.1", server_port))
+            sock.sendto(payload, ("127.0.0.1", server_port))
 
 
 TraceDataCommand()

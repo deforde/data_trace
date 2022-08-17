@@ -4,6 +4,10 @@ from os import path
 import subprocess as sp
 import argparse
 import json
+import socket
+import logging
+import concurrent.futures
+import struct
 
 from matplotlib import pyplot as plt
 
@@ -12,7 +16,31 @@ PATH = path.dirname(path.abspath(__file__))
 GDB_CMDS_FILEPATH = path.join(PATH, "gdb_cmds")
 GDB_EXTENSIONS = path.join(PATH, "gdb_extensions.py")
 DATA_TRACE_OUT_FILEPATH = path.join(PATH, "data_trace_out.txt")
-DTRACE_LINE_PREFIX = "DTRACE: "  # TODO: This is defined twice
+UDP_DATA_PORT = 5555  # TODO: This is defined twice
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+logger.addHandler(ch)
+
+
+def _subprocess():
+    logger.info("running gdb")
+    sp.run(
+        [
+            "gdb",
+            "-x",
+            GDB_CMDS_FILEPATH,
+            "--args",
+            app_path,
+        ]
+        + app_args,
+        check=True,
+    )
+    logger.info("gdb complete")
+    with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
+        sock.sendto(struct.pack("=I", 0), ("127.0.0.1", UDP_DATA_PORT))
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("config", type=str, help="config file")
@@ -46,7 +74,7 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
                     f"watch {ident}\n"
                     "commands\n"
                     "silent\n"
-                    f'trace_data {{"id": "{ident}"}}\n'
+                    f'trace_data {{"id": "{ident}", "server_port": {UDP_DATA_PORT}}}\n'
                     "c\n"
                     "end\n"
                 )
@@ -56,7 +84,7 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
             idents = local_dict["ids"]
             gdb_cmds_file.write(f"b {loc}\n" "commands\n" "silent\n")
             for ident in idents:
-                gdb_cmds_file.write(f'trace_data {{"id": "{ident}"}}\n')
+                gdb_cmds_file.write(f'trace_data {{"id": "{ident}", "server_port": {UDP_DATA_PORT}}}\n')
             gdb_cmds_file.write("c\n" "end\n")
     if "statics" in config:
         for static_dict in config["statics"]:
@@ -66,33 +94,34 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
                 f"watch '{src_file}'::{ident}\n"
                 "commands\n"
                 "silent\n"
-                f'trace_data {{"id": "{ident}"}}\n'
+                f'trace_data {{"id": "{ident}", "server_port": {UDP_DATA_PORT}}}\n'
                 "c\n"
                 "end\n"
             )
     gdb_cmds_file.write("r\n" "q\n")
 
-sp.run(
-    [
-        "gdb",
-        "-x",
-        GDB_CMDS_FILEPATH,
-        "--args",
-        app_path,
-    ]
-    + app_args,
-    check=True,
-)
-
 data = {}
-with open(DATA_TRACE_OUT_FILEPATH, mode="r", encoding="utf-8") as dtrace_out_file:
-    for line in dtrace_out_file:
-        if not line.startswith(DTRACE_LINE_PREFIX):
-            continue
-        line = line[len(DTRACE_LINE_PREFIX):]
-        splits = line.split("=")
+
+with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
+    sock.bind(("127.0.0.1", UDP_DATA_PORT))
+
+    executor = concurrent.futures.ProcessPoolExecutor()
+    future = executor.submit(
+        _subprocess,
+    )
+
+    while future.running():
+        (payload_len,) = struct.unpack(
+            "=I", sock.recvfrom(4)[0]
+        )
+        logger.debug("payload_len received: %i", payload_len)
+        if payload_len == 0:
+            break
+        payload = bytes.decode(sock.recvfrom(payload_len)[0], encoding="utf-8")
+        logger.debug("payload received: %s", payload)
+        splits = payload.split(":")
         ident = splits[0]
-        val = splits[1].strip()
+        val = splits[1]
         if val[0] == "{":
             vals = val[1:-1].split(",")
             data[ident] = [float(v) for v in vals]
@@ -100,6 +129,7 @@ with open(DATA_TRACE_OUT_FILEPATH, mode="r", encoding="utf-8") as dtrace_out_fil
             if ident not in data:
                 data[ident] = []
             data[ident].append(float(val))
+logger.info("super-process server socket closed")
 
 fig = plt.figure()
 fig.set_size_inches(w=16, h=9)
