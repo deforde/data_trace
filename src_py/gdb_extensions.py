@@ -4,10 +4,6 @@ import socket
 import struct
 import gdb
 
-UDP_DATA_PORT = 5555  # TODO: This is defined twice
-SYNC_COUNTER_MAX = 32767  # TODO: This is defined twice
-SYNC_COUNTER = 0
-
 
 class TraceDataCommand(gdb.Command):
     def __init__(self):
@@ -49,15 +45,12 @@ class TraceDataCommand(gdb.Command):
                     payloads.append(bytes(f"{ident}.{field.name}:{field_val}", encoding="utf-8"))
             else:
                 payloads.append(bytes(f"{ident}:{val}", encoding="utf-8"))
-        with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
+        with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as sock:
+            sock.connect(("127.0.0.1", server_port))
+            sock.sendall(struct.pack("=I", len(payloads)))
             for payload in payloads:
-                global SYNC_COUNTER
-                sock.sendto(
-                    struct.pack("=II", SYNC_COUNTER, len(payload)),
-                    ("127.0.0.1", server_port),
-                )
-                sock.sendto(payload, ("127.0.0.1", server_port))
-                SYNC_COUNTER = (SYNC_COUNTER + 1) % SYNC_COUNTER_MAX
+                sock.sendall(struct.pack("=I", len(payload)))
+                sock.sendall(payload)
 
 
 TraceDataCommand()
