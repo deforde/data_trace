@@ -79,7 +79,9 @@ with open(GDB_CMDS_FILEPATH, mode="w", encoding="utf-8") as gdb_cmds_file:
             idents = local_dict["ids"]
             gdb_cmds_file.write(f"b {loc}\n" "commands\n" "silent\n")
             for ident in idents:
-                gdb_cmds_file.write(f'trace_data {{"id": "{ident}", "server_port": {UDP_DATA_PORT}}}\n')
+                gdb_cmds_file.write(
+                    f'trace_data {{"id": "{ident}", "server_port": {UDP_DATA_PORT}}}\n'
+                )
             gdb_cmds_file.write("c\n" "end\n")
     if "statics" in config:
         for static_dict in config["statics"]:
@@ -106,9 +108,7 @@ with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
     )
 
     while future.running():
-        (payload_len,) = struct.unpack(
-            "=I", sock.recvfrom(4)[0]
-        )
+        (payload_len,) = struct.unpack("=I", sock.recvfrom(4)[0])
         logger.debug("payload_len received: %i", payload_len)
         if payload_len == 0:
             break

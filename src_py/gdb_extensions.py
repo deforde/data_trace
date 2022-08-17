@@ -29,7 +29,9 @@ class TraceDataCommand(gdb.Command):
             arr_len = int(arr_len)
             assert val.type.code == gdb.TYPE_CODE_PTR
             val = val.cast(
-                gdb.parse_and_eval(f"({val.type.target().name}[{arr_len}]*){ident}").type
+                gdb.parse_and_eval(
+                    f"({val.type.target().name}[{arr_len}]*){ident}"
+                ).type
             ).dereference()
         else:
             val = gdb.parse_and_eval(ident)
