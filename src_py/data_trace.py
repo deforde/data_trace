@@ -125,7 +125,6 @@ with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as sock:
         _subprocess,
     )
 
-    exp_sync_counter = 0
     while future.running():
         logger.debug("accepting a connection from the sub-process")
         conn, addr = sock.accept()
