@@ -129,4 +129,4 @@ fig.set_size_inches(w=16, h=9)
 for var, vals in data.items():
     plt.plot(vals, label=var)
 fig.legend()
-plt.savefig(path.join(PATH, "dtrace.png"))
+plt.savefig(path.join(PATH, "dtrace.svg"))
