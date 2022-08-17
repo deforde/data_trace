@@ -1,4 +1,7 @@
 .venv/
 build/
 data_trace_out.txt
-*.png
+gdb_cmds
+__pycache__/
+*.svg
+*.pickle
