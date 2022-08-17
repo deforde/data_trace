@@ -114,9 +114,7 @@ with socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM) as sock:
             break
         payload = bytes.decode(sock.recvfrom(payload_len)[0], encoding="utf-8")
         logger.debug("payload received: %s", payload)
-        splits = payload.split(":")
-        ident = splits[0]
-        val = splits[1]
+        ident, val = payload.split(":")
         if val[0] == "{":
             vals = val[1:-1].split(",")
             data[ident] = [float(v) for v in vals]

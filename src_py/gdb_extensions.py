@@ -21,9 +21,7 @@ class TraceDataCommand(gdb.Command):
         server_port = int(desc["server_port"])
         ident = desc["id"]
         if "@" in ident:
-            splits = ident.split("@")
-            ident = splits[0]
-            arr_len = splits[1]
+            ident, arr_len = ident.split("@")
             val = gdb.parse_and_eval(ident)
             arr_len = gdb.parse_and_eval(arr_len)
             arr_len = int(arr_len)
