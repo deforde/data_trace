@@ -49,10 +49,11 @@ class TraceDataCommand(gdb.Command):
                 payloads.append(bytes(f"{ident}:{val}", encoding="utf-8"))
         with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as sock:
             sock.connect(("127.0.0.1", server_port))
-            sock.sendall(struct.pack("=I", len(payloads)))
+            packet = [struct.pack("=I", len(payloads))]
             for payload in payloads:
-                sock.sendall(struct.pack("=I", len(payload)))
-                sock.sendall(payload)
+                packet.append(struct.pack("=I", len(payload)))
+                packet.append(payload)
+            sock.sendall(b''.join(packet))
 
 
 TraceDataCommand()
