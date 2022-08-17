@@ -42,7 +42,9 @@ class TraceDataCommand(gdb.Command):
             if val.type.strip_typedefs().code == gdb.TYPE_CODE_STRUCT:
                 for field in val.type.strip_typedefs().fields():
                     field_val = self._decay_type(val[field.name])
-                    payloads.append(bytes(f"{ident}.{field.name}:{field_val}", encoding="utf-8"))
+                    payloads.append(
+                        bytes(f"{ident}.{field.name}:{field_val}", encoding="utf-8")
+                    )
             else:
                 payloads.append(bytes(f"{ident}:{val}", encoding="utf-8"))
         with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as sock:

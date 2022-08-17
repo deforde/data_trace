@@ -130,7 +130,9 @@ with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as sock:
         logger.debug("accepting a connection from the sub-process")
         conn, addr = sock.accept()
         with conn:
-            logger.debug("connection accepted from sub-process, remote endpoint: %s", addr)
+            logger.debug(
+                "connection accepted from sub-process, remote endpoint: %s", addr
+            )
             (payload_cnt,) = struct.unpack("=I", _recv_all(conn, 4))
             # A payload count of zero is used to indicate the end of the data stream
             if payload_cnt == 0:
