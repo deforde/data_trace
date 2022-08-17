@@ -53,7 +53,7 @@ class TraceDataCommand(gdb.Command):
             for payload in payloads:
                 packet.append(struct.pack("=I", len(payload)))
                 packet.append(payload)
-            sock.sendall(b''.join(packet))
+            sock.sendall(b"".join(packet))
 
 
 TraceDataCommand()
