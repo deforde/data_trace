@@ -101,9 +101,7 @@ def _write_gdb_cmds_file(config: dict, server_port: int):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("config", type=str, help="config file")
-args = parser.parse_args(
-    ["/home/danielforde/dev/deforde/data_trace/src_py/config.json"]
-)
+args = parser.parse_args()
 
 config = {}
 with open(args.config, mode="r", encoding="utf-8") as config_file:
